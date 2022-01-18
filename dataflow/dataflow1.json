@@ -1,0 +1,46 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Orderbreakdown",
+						"type": "DatasetReference"
+					},
+					"name": "OrdersBreakdown"
+				},
+				{
+					"dataset": {
+						"referenceName": "ListofOrders",
+						"type": "DatasetReference"
+					},
+					"name": "ListofOrders"
+				},
+				{
+					"dataset": {
+						"referenceName": "SalesTarget",
+						"type": "DatasetReference"
+					},
+					"name": "SalesTarget"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Output",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Aggregate1"
+				}
+			],
+			"script": "source(output(\n\t\t{Order ID} as string,\n\t\t{Product Name} as string,\n\t\tDiscount as string,\n\t\tSales as decimal(10,0),\n\t\tProfit as string,\n\t\tQuantity as string,\n\t\tCategory as string,\n\t\t{Sub-Category} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 1)) ~> OrdersBreakdown\nsource(output(\n\t\t{Order ID} as string,\n\t\t{Order Date} as date,\n\t\t{Customer Name} as string,\n\t\tCity as string,\n\t\tCountry as string,\n\t\tRegion as string,\n\t\tSegment as string,\n\t\t{Ship Date} as date,\n\t\t{Ship Mode} as string,\n\t\tState as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 1)) ~> ListofOrders\nsource(output(\n\t\t{Month of Order Date} as date,\n\t\tCategory as string,\n\t\tTarget as decimal(10,0)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 1)) ~> SalesTarget\nSalesTarget aggregate(SalesTargetID = count(),\n\tpartitionBy('hash', 1)) ~> Aggregate1\nAggregate1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalestargetOutput.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sink1"
+		}
+	}
+}
